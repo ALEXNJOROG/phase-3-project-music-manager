@@ -21,7 +21,7 @@ class Artiste(Base):
     @name.setter
     def name(self, value):
         if not value.strip():
-            raise ValueError('Artiste name cannot be blank')
+            raise ValueError('Artiste name can never be blank')
         self._name = value.strip()
 
     @classmethod
