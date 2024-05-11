@@ -8,7 +8,7 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 def main_menu():
-    print('Welcome to the Music CLI!')
+    print('Welcome to the Music Manager CLI!')
     print('1. Artiste Menu')
     print('2. Song Menu')
     print('3. Exit')
