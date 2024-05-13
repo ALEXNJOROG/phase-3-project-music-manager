@@ -4,9 +4,13 @@
 Music Manager is a program that enables the user to organize a list of their favorite music on the basis of the artists and their particular songs.
 The program's features facilitate creation of new enitites as well as deletion of unwanted already existing entities.
 
-This application uses SQLAlchemy as the ORM to interact with a SQLite database. It defines two model classes, Artiste and Song, with a one-to-many relationship between them (one artist can have multiple songs).
+This application uses a custom ORM to interact with a SQLite database. It defines two model classes, Artiste and Song, with a one-to-many relationship between them (one artist can have multiple songs).
 
-The models.py file defines the Artiste and Song model classes, including property methods to validate the data, and ORM methods for creating, getting, and deleting objects.
+The Database class is a context manager that handles the connection to the SQLite database. It provides methods to execute SQL queries and fetch results.
+
+The Model class is a base class that defines common CRUD operations for models. It uses the Database class to interact with the database.
+
+The Artiste and Song classes inherit from the Model class and define their respective table names and additional methods.
 
 The app.py file contains the CLI logic, with the menus updated to reflect the Artiste and Song models.
 Running the app.py file, it will create the database file music.db (if it doesn't exist) and user can interact with the application through the CLI menus to manage artists and songs.
@@ -16,7 +20,7 @@ Running the app.py file, it will create the database file music.db (if it doesn'
 1. Fork and Clone this repository to a local environment.
 2. To install required dependancies run : pipenv install
 3. To use the shell rurn : pipenv shell
-4. To install SQLAlchemy run : pip install SQLAlchemy
+
 
 
 ## FEATURES

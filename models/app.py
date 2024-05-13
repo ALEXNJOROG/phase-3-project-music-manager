@@ -1,21 +1,14 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from models import Base, Artiste, Song
-
-engine = create_engine('sqlite:///music.db')
-Base.metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
-session = Session()
+from models import Artiste, Song
 
 def main_menu():
-    print('Welcome to the Music Manager CLI!')
+    print('Welcome to the Music CLI!')
     print('1. Artiste Menu')
     print('2. Song Menu')
     print('3. Exit')
     choice = input('Enter your choice: ')
     return choice
 
-def artiste_menu(session):
+def artiste_menu():
     while True:
         print('\nArtiste Menu')
         print('1. Create Artiste')
@@ -28,37 +21,40 @@ def artiste_menu(session):
 
         if choice == '1':
             name = input('Enter artiste name: ')
-            try:
-                artiste = Artiste.create(session, name)
-                print(f'Artiste created: {artiste}')
-            except ValueError as e:
-                print(f'Error: {e}')
+            artiste = Artiste()
+            artiste.create(name)
+            print(f'Artiste created with name: {name}')
 
         elif choice == '2':
-            artistes = Artiste.get_all(session)
-            for artiste in artistes:
-                print(artiste)
+            artiste = Artiste()
+            artistes = artiste.get_all()
+            for artiste_data in artistes:
+                print(f"ID: {artiste_data[0]}, Name: {artiste_data[1]}")
 
         elif choice == '3':
             id = int(input('Enter artiste ID: '))
-            artiste = Artiste.get_by_id(session, id)
-            if artiste:
-                print(artiste)
+            artiste = Artiste()
+            artiste_data = artiste.get_by_id(id)
+            if artiste_data:
+                print(f"ID: {artiste_data[0]}, Name: {artiste_data[1]}")
             else:
                 print(f'Artiste with ID {id} not found')
 
         elif choice == '4':
             id = int(input('Enter artiste ID: '))
-            Artiste.delete(session, id)
+            artiste = Artiste()
+            artiste.delete(id)
             print(f'Artiste with ID {id} deleted')
 
         elif choice == '5':
             id = int(input('Enter artiste ID: '))
-            artiste = Artiste.get_by_id(session, id)
-            if artiste:
-                print(f'Songs by {artiste.name}:')
-                for song in artiste.songs:
-                    print(song)
+            artiste = Artiste()
+            artiste_data = artiste.get_by_id(id)
+            if artiste_data:
+                songs = artiste.get_songs(id)
+                print(f'Songs by {artiste_data[1]}:')
+                for song_data in songs:
+                    print(f"ID: {song_data[0]}, Title: {song_data[1]}")
             else:
                 print(f'Artiste with ID {id} not found')
 
@@ -68,7 +64,7 @@ def artiste_menu(session):
         else:
             print('Invalid choice')
 
-def song_menu(session):
+def song_menu():
     while True:
         print('\nSong Menu')
         print('1. Create Song')
@@ -81,28 +77,29 @@ def song_menu(session):
         if choice == '1':
             title = input('Enter song title: ')
             artiste_id = int(input('Enter artiste ID: '))
-            try:
-                song = Song.create(session, title, artiste_id)
-                print(f'Song created: {song}')
-            except ValueError as e:
-                print(f'Error: {e}')
+            song = Song()
+            song.create(title, artiste_id)
+            print(f'Song created with title: {title}')
 
         elif choice == '2':
-            songs = Song.get_all(session)
-            for song in songs:
-                print(song)
+            song = Song()
+            songs = song.get_all()
+            for song_data in songs:
+                print(f"ID: {song_data[0]}, Title: {song_data[1]}, Artiste ID: {song_data[2]}")
 
         elif choice == '3':
             id = int(input('Enter song ID: '))
-            song = Song.get_by_id(session, id)
-            if song:
-                print(song)
+            song = Song()
+            song_data = song.get_by_id(id)
+            if song_data:
+                print(f"ID: {song_data[0]}, Title: {song_data[1]}, Artiste ID: {song_data[2]}")
             else:
                 print(f'Song with ID {id} not found')
 
         elif choice == '4':
             id = int(input('Enter song ID: '))
-            Song.delete(session, id)
+            song = Song()
+            song.delete(id)
             print(f'Song with ID {id} deleted')
 
         elif choice == '5':
@@ -112,16 +109,14 @@ def song_menu(session):
             print('Invalid choice')
 
 def main():
-    session = Session()
-
     while True:
         choice = main_menu()
 
         if choice == '1':
-            artiste_menu(session)
+            artiste_menu()
 
         elif choice == '2':
-            song_menu(session)
+            song_menu()
 
         elif choice == '3':
             print('Goodbye!')
@@ -129,8 +124,6 @@ def main():
 
         else:
             print('Invalid choice')
-
-    session.close()
 
 if __name__ == '__main__':
     main()

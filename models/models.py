@@ -1,90 +1,79 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
+import sqlite3
 
-Base = declarative_base()
+class Database:
+    def __init__(self, db_name):
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
 
-class Artiste(Base):
-    __tablename__ = 'artistes'
+    def __enter__(self):
+        return self
 
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    songs = relationship('Song', back_populates='artiste')
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.conn.close()
 
-    def __repr__(self):
-        return f'Artiste(id={self.id}, name="{self.name}")'
+    def execute(self, query, params=None):
+        if params:
+            self.cursor.execute(query, params)
+        else:
+            self.cursor.execute(query)
+        self.conn.commit()
 
-    @property
-    def name(self):
-        return self._name
+    def fetch_all(self, query, params=None):
+        if params:
+            self.cursor.execute(query, params)
+        else:
+            self.cursor.execute(query)
+        return self.cursor.fetchall()
 
-    @name.setter
-    def name(self, value):
-        if not value.strip():
-            raise ValueError('Artiste name can never be blank')
-        self._name = value.strip()
+    def fetch_one(self, query, params=None):
+        if params:
+            self.cursor.execute(query, params)
+        else:
+            self.cursor.execute(query)
+        return self.cursor.fetchone()
 
-    @classmethod
-    def create(cls, session, name):
-        artiste = cls(name=name)
-        session.add(artiste)
-        session.commit()
-        return artiste
+class Model:
+    def __init__(self, table_name):
+        self.table_name = table_name
 
-    @classmethod
-    def get_all(cls, session):
-        return session.query(cls).all()
+    def create(self, **kwargs):
+        columns = ', '.join(kwargs.keys())
+        placeholders = ', '.join(['?'] * len(kwargs))
+        query = f"INSERT INTO {self.table_name} ({columns}) VALUES ({placeholders})"
+        values = tuple(kwargs.values())
+        with Database('music.db') as db:
+            db.execute(query, values)
 
-    @classmethod
-    def get_by_id(cls, session, id):
-        return session.query(cls).get(id)
+    def get_all(self):
+        query = f"SELECT * FROM {self.table_name}"
+        with Database('music.db') as db:
+            return db.fetch_all(query)
 
-    @classmethod
-    def delete(cls, session, id):
-        artiste = cls.get_by_id(session, id)
-        if artiste:
-            session.delete(artiste)
-            session.commit()
+    def get_by_id(self, id):
+        query = f"SELECT * FROM {self.table_name} WHERE id = ?"
+        with Database('music.db') as db:
+            return db.fetch_one(query, (id,))
 
-class Song(Base):
-    __tablename__ = 'songs'
+    def delete(self, id):
+        query = f"DELETE FROM {self.table_name} WHERE id = ?"
+        with Database('music.db') as db:
+            db.execute(query, (id,))
 
-    id = Column(Integer, primary_key=True)
-    title = Column(String, nullable=False)
-    artiste_id = Column(Integer, ForeignKey('artistes.id'))
-    artiste = relationship('Artiste', back_populates='songs')
+class Artiste(Model):
+    def __init__(self):
+        super().__init__('artistes')
 
-    def __repr__(self):
-        return f'Song(id={self.id}, title="{self.title}", artiste_id={self.artiste_id})'
+    def create(self, name):
+        super().create(name=name)
 
-    @property
-    def title(self):
-        return self._title
+    def get_songs(self, artiste_id):
+        query = "SELECT * FROM songs WHERE artiste_id = ?"
+        with Database('music.db') as db:
+            return db.fetch_all(query, (artiste_id,))
 
-    @title.setter
-    def title(self, value):
-        if not value.strip():
-            raise ValueError('Song title cannot be blank')
-        self._title = value.strip()
+class Song(Model):
+    def __init__(self):
+        super().__init__('songs')
 
-    @classmethod
-    def create(cls, session, title, artiste_id):
-        song = cls(title=title, artiste_id=artiste_id)
-        session.add(song)
-        session.commit()
-        return song
-
-    @classmethod
-    def get_all(cls, session):
-        return session.query(cls).all()
-
-    @classmethod
-    def get_by_id(cls, session, id):
-        return session.query(cls).get(id)
-
-    @classmethod
-    def delete(cls, session, id):
-        song = cls.get_by_id(session, id)
-        if song:
-            session.delete(song)
-            session.commit()
+    def create(self, title, artiste_id):
+        super().create(title=title, artiste_id=artiste_id)
